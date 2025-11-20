@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "134717164052",
+    "project_id": "presupuesto-familiar-ee8eb",
+    "storage_bucket": "presupuesto-familiar-ee8eb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:134717164052:android:029dd21995a1d1f1e7b501",
+        "android_client_info": {
+          "package_name": "com.example.presupuesto_familiar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCGcWpzQlymKgADtCPQXMaMvIGZweheYI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
