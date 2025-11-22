@@ -14,16 +14,17 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Presupuesto Familiar',
         theme: ThemeData(primarySwatch: Colors.blue),
-        home: const AuthWrapper(),
+        home: AuthWrapper(), // Quitamos const
       ),
     );
   }
 }
 
 class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
+  AuthWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +39,9 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        return snapshot.hasData ? const HomeScreen() : const LoginScreen();
+        return snapshot.hasData
+            ? HomeScreen() // Quitamos const
+            : LoginScreen(); // Quitamos const
       },
     );
   }

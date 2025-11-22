@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
-import 'register_screen.dart';
 import '../home_screen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  LoginScreen({super.key}); // Quitamos const
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -38,9 +38,15 @@ class _LoginScreenState extends State<LoginScreen> {
               obscureText: true,
             ),
             const SizedBox(height: 20),
+
             if (errorMessage != null)
-              Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+              Text(
+                errorMessage!,
+                style: const TextStyle(color: Colors.red),
+              ),
+
             const SizedBox(height: 20),
+
             ElevatedButton(
               onPressed: loading
                   ? null
@@ -50,8 +56,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         errorMessage = null;
                       });
 
-                      final error = await auth.signIn(
-                          email.text.trim(), pass.text.trim());
+                      final error =
+                          await auth.signIn(email.text.trim(), pass.text.trim());
 
                       if (error != null) {
                         setState(() => errorMessage = error);
@@ -59,7 +65,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => const HomeScreen()),
+                            builder: (_) => HomeScreen(), // Quitamos const
+                          ),
                         );
                       }
 
@@ -69,13 +76,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   ? const CircularProgressIndicator(color: Colors.white)
                   : const Text("Ingresar"),
             ),
+
             const SizedBox(height: 10),
+
             TextButton(
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => const RegisterScreen()),
+                    builder: (_) => RegisterScreen(), // Quitamos const
+                  ),
                 );
               },
               child: const Text("Crear cuenta"),

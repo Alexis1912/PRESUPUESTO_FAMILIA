@@ -4,7 +4,7 @@ import '../../services/auth_service.dart';
 import '../home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  RegisterScreen({super.key}); // Quitamos const
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -36,9 +36,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
               obscureText: true,
             ),
             const SizedBox(height: 20),
+
             if (errorMessage != null)
-              Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+              Text(
+                errorMessage!,
+                style: const TextStyle(color: Colors.red),
+              ),
+
             const SizedBox(height: 20),
+
             ElevatedButton(
               onPressed: loading
                   ? null
@@ -49,7 +55,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       });
 
                       final error = await auth.register(
-                          email.text.trim(), pass.text.trim());
+                        email.text.trim(),
+                        pass.text.trim(),
+                      );
 
                       if (error != null) {
                         setState(() => errorMessage = error);
@@ -57,7 +65,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => const HomeScreen()),
+                            builder: (_) => HomeScreen(), // Quitamos const
+                          ),
                         );
                       }
 
