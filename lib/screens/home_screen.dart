@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'movimientos/registrar_movimiento.dart';
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({super.key}); // <- Asegúrate de NO usar const aquí
@@ -13,7 +14,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _paginas = [
     Center(child: Text("📊 Resumen General")),
-    Center(child: Text("💰 Registrar Movimiento")),
+    RegistrarMovimientoScreen(),
     Center(child: Text("📁 Historial de Gastos")),
     Center(child: Text("⚙ Configuración")),
   ];
