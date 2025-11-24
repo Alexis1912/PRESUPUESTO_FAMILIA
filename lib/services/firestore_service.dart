@@ -1,21 +1,30 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/expense.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class FirestoreService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore db = FirebaseFirestore.instance;
 
-  // Obtener gastos en tiempo real
-  Stream<List<Expense>> getExpenses() {
-    return _db
-        .collection("expenses")
-        .orderBy("createdAt", descending: true)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => Expense.fromDoc(doc)).toList());
-  }
+  Future<String?> guardarMovimiento({
+    required String tipo,
+    required String categoria,
+    required double monto,
+    required String descripcion,
+  }) async {
+    try {
+      final String uid = FirebaseAuth.instance.currentUser!.uid;
 
-  // Agregar gasto
-  Future<void> addExpense(Expense exp) async {
-    await _db.collection("expenses").add(exp.toMap());
+      await db.collection('movimientos').add({
+        "uid": uid,
+        "tipo": tipo,
+        "categoria": categoria,
+        "monto": monto,
+        "descripcion": descripcion,
+        "fecha": DateTime.now(),
+      });
+
+      return null; // sin errores
+    } catch (e) {
+      return e.toString();
+    }
   }
 }

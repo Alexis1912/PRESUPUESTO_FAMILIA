@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/firestore_service.dart';
 
 class RegistrarMovimientoScreen extends StatefulWidget {
   RegistrarMovimientoScreen({super.key});
@@ -23,6 +24,8 @@ class _RegistrarMovimientoScreenState extends State<RegistrarMovimientoScreen> {
     "Entretenimiento",
     "General",
   ];
+
+  bool loading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -76,20 +79,49 @@ class _RegistrarMovimientoScreenState extends State<RegistrarMovimientoScreen> {
             const SizedBox(height: 30),
 
             ElevatedButton(
-              onPressed: () {
-                print("📌 Movimiento registrado:");
-                print("Tipo: $tipo");
-                print("Categoría: $categoria");
-                print("Monto: ${montoController.text}");
-                print("Descripción: ${descripcionController.text}");
+              onPressed: loading
+                  ? null
+                  : () async {
+                      if (montoController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Ingrese un monto válido")),
+                        );
+                        return;
+                      }
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Movimiento guardado temporalmente")),
-                );
-                
-                Navigator.pop(context);
-              },
-              child: const Text("Guardar"),
+                      setState(() => loading = true);
+
+                      final firestore = FirestoreService();
+
+                      final error = await firestore.guardarMovimiento(
+                        tipo: tipo,
+                        categoria: categoria,
+                        monto: double.tryParse(montoController.text) ?? 0.0,
+                        descripcion: descripcionController.text,
+                      );
+
+                      setState(() => loading = false);
+
+                      if (error == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Movimiento guardado en Firestore 🎉")),
+                        );
+
+                        // Espera corta para evitar errores en Web
+                        await Future.delayed(const Duration(milliseconds: 200));
+
+                        if (Navigator.canPop(context)) {
+                          Navigator.pop(context);
+                        }
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Error: $error")),
+                        );
+                      }
+                    },
+              child: loading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text("Guardar"),
             )
           ],
         ),
