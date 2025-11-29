@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../models/user_model.dart';
 import '../home_screen.dart';
 import 'register_screen.dart';
 
@@ -10,23 +13,66 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final email = TextEditingController();
-  final pass = TextEditingController();
+  final password = TextEditingController();
+  bool cargando = false;
 
-  final auth = AuthService();
+  Future<void> login() async {
+    setState(() => cargando = true);
+
+    try {
+      // 🔥 INICIO DE SESIÓN
+      UserCredential cred = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+        email: email.text.trim(),
+        password: password.text.trim(),
+      );
+
+      final uid = cred.user!.uid;
+
+      // 🔥 OBTENER DATOS DEL USUARIO EN FIRESTORE
+      final doc = await FirebaseFirestore.instance
+          .collection("usuarios")
+          .doc(uid)
+          .get();
+
+      if (!doc.exists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: el usuario no tiene datos en Firestore")),
+        );
+        return;
+      }
+
+      final user = UserModel.fromMap(doc.data()!);
+
+      // 🔥 REDIRIGIR AL HOME
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => HomeScreen(user: user)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error al iniciar sesión: $e")),
+      );
+    }
+
+    setState(() => cargando = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(25),
-        child: Center(
+      body: Center(
+        child: SizedBox(
+          width: 450,
           child: ListView(
+            padding: const EdgeInsets.all(20),
             shrinkWrap: true,
             children: [
+              const SizedBox(height: 40),
               const Text(
                 "Iniciar Sesión",
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
 
               const SizedBox(height: 40),
@@ -35,30 +81,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: email,
                 decoration: InputDecoration(labelText: "Correo"),
               ),
+
               const SizedBox(height: 20),
 
               TextField(
-                controller: pass,
-                obscureText: true,
+                controller: password,
                 decoration: InputDecoration(labelText: "Contraseña"),
+                obscureText: true,
               ),
 
               const SizedBox(height: 30),
 
               ElevatedButton(
-                onPressed: () async {
-                  final user = await auth.login(email.text, pass.text);
-                  if (user != null) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => HomeScreen(user: user),
-                      ),
-                    );
-                  }
-                },
-                child: const Text("Ingresar"),
+                onPressed: cargando ? null : login,
+                child: cargando
+                    ? CircularProgressIndicator(color: Colors.white)
+                    : const Text("Ingresar"),
               ),
+
+              const SizedBox(height: 10),
 
               TextButton(
                 onPressed: () {
