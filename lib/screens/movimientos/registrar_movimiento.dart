@@ -1,127 +1,94 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../../services/firestore_service.dart';
 
 class RegistrarMovimientoScreen extends StatefulWidget {
-  RegistrarMovimientoScreen({super.key});
+  final String uid;
+  final String nombre;
+
+  RegistrarMovimientoScreen({required this.uid, required this.nombre});
 
   @override
   State<RegistrarMovimientoScreen> createState() => _RegistrarMovimientoScreenState();
 }
 
 class _RegistrarMovimientoScreenState extends State<RegistrarMovimientoScreen> {
-  final TextEditingController montoController = TextEditingController();
-  final TextEditingController descripcionController = TextEditingController();
-
+  final monto = TextEditingController();
+  final descripcion = TextEditingController();
   String tipo = "ingreso";
   String categoria = "General";
 
-  final List<String> categorias = [
-    "Alimentación",
-    "Transporte",
-    "Servicios",
-    "Salud",
-    "Educación",
-    "Entretenimiento",
-    "General",
-  ];
+  Future<void> guardarMovimiento() async {
+    if (monto.text.isEmpty) return;
 
-  bool loading = false;
+    await FirebaseFirestore.instance.collection("movimientos").add({
+      "uid": widget.uid,
+      "usuario": widget.nombre,
+      "monto": double.parse(monto.text),
+      "descripcion": descripcion.text,
+      "categoria": categoria,
+      "tipo": tipo,
+      "fecha": Timestamp.now(),
+    });
+
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Registrar Movimiento")),
-
+      appBar: AppBar(title: Text("Registrar Movimiento")),
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
           children: [
-            const Text("Tipo de movimiento", style: TextStyle(fontWeight: FontWeight.bold)),
-            DropdownButton(
-              value: tipo,
-              items: const [
-                DropdownMenuItem(value: "ingreso", child: Text("Ingreso")),
-                DropdownMenuItem(value: "egreso", child: Text("Egreso")),
+            Text("Tipo de movimiento", style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 10),
+
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: "ingreso", label: Text("Ingreso")),
+                ButtonSegment(value: "egreso", label: Text("Egreso")),
               ],
-              onChanged: (value) {
-                setState(() {
-                  tipo = value.toString();
-                });
-              },
+              selected: {tipo},
+              onSelectionChanged: (value) => setState(() => tipo = value.first),
             ),
-            const SizedBox(height: 20),
 
-            const Text("Categoría", style: TextStyle(fontWeight: FontWeight.bold)),
-            DropdownButton(
-              value: categoria,
-              items: categorias
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  categoria = value.toString();
-                });
-              },
-            ),
-            const SizedBox(height: 20),
+            SizedBox(height: 25),
 
             TextField(
-              controller: montoController,
+              controller: monto,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Monto (Bs.)"),
-            ),
-            TextField(
-              controller: descripcionController,
-              decoration: const InputDecoration(labelText: "Descripción"),
+              decoration: InputDecoration(labelText: "Monto (Bs.)"),
             ),
 
-            const SizedBox(height: 30),
+            SizedBox(height: 20),
+
+            TextField(
+              controller: descripcion,
+              decoration: InputDecoration(labelText: "Descripción"),
+            ),
+
+            SizedBox(height: 20),
+
+            DropdownButtonFormField(
+              value: categoria,
+              items: [
+                "General",
+                "Comida",
+                "Transporte",
+                "Servicios",
+                "Salud",
+                "Entretenimiento"
+              ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+              onChanged: (v) => setState(() => categoria = v!),
+              decoration: InputDecoration(labelText: "Categoría"),
+            ),
+
+            SizedBox(height: 30),
 
             ElevatedButton(
-              onPressed: loading
-                  ? null
-                  : () async {
-                      if (montoController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Ingrese un monto válido")),
-                        );
-                        return;
-                      }
-
-                      setState(() => loading = true);
-
-                      final firestore = FirestoreService();
-
-                      final error = await firestore.guardarMovimiento(
-                        tipo: tipo,
-                        categoria: categoria,
-                        monto: double.tryParse(montoController.text) ?? 0.0,
-                        descripcion: descripcionController.text,
-                      );
-
-                      setState(() => loading = false);
-
-                      if (error == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Movimiento guardado en Firestore 🎉")),
-                        );
-
-                        // Espera corta para evitar errores en Web
-                        await Future.delayed(const Duration(milliseconds: 200));
-
-                        if (Navigator.canPop(context)) {
-                          Navigator.pop(context);
-                        }
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Error: $error")),
-                        );
-                      }
-                    },
-              child: loading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("Guardar"),
+              onPressed: guardarMovimiento,
+              child: const Text("Guardar Movimiento"),
             )
           ],
         ),

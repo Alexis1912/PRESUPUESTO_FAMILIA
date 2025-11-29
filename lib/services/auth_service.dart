@@ -1,60 +1,42 @@
-import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../models/user_model.dart';
 
-class AuthService with ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+class AuthService {
+  final _auth = FirebaseAuth.instance;
+  final _db = FirebaseFirestore.instance;
 
-  Stream<User?> get userChanges => _auth.authStateChanges();
-  User? get currentUser => _auth.currentUser;
-
-  Future<String?> signIn(String email, String password) async {
-    try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
-      notifyListeners();
-      return null;
-    } on FirebaseAuthException catch (e) {
-      return _firebaseMessage(e);
-    } catch (e) {
-      return "Error desconocido: ${e.toString()}";
-    }
+  Future<UserModel?> getUserData(String uid) async {
+    final doc = await _db.collection("usuarios").doc(uid).get();
+    if (!doc.exists) return null;
+    return UserModel.fromMap(doc.data()!);
   }
 
-  Future<String?> register(String email, String password) async {
-    try {
-      await _auth.createUserWithEmailAndPassword(email: email, password: password);
-      notifyListeners();
-      return null;
-    } on FirebaseAuthException catch (e) {
-      return _firebaseMessage(e);
-    } catch (e) {
-      return "Error desconocido: ${e.toString()}";
-    }
+  Future<UserModel> registerUser(
+      String nombre, String email, String pass) async {
+    final cred = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: pass,
+    );
+
+    final user = UserModel(
+      uid: cred.user!.uid,
+      nombre: nombre,
+      rol: "miembro",
+    );
+
+    await _db.collection("usuarios").doc(user.uid).set(user.toMap());
+    return user;
   }
 
-  Future<String?> signOut() async {
-    try {
-      await _auth.signOut();
-      notifyListeners();
-      return null;
-    } catch (e) {
-      return "Error cerrando sesión: ${e.toString()}";
-    }
+  Future<UserModel?> login(String email, String pass) async {
+    final cred = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: pass,
+    );
+
+    return getUserData(cred.user!.uid);
   }
 
-  String _firebaseMessage(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'user-not-found':
-        return "Usuario no registrado";
-      case 'wrong-password':
-        return "Contraseña incorrecta";
-      case 'invalid-email':
-        return "Correo inválido";
-      case 'email-already-in-use':
-        return "Este correo ya está registrado";
-      case 'weak-password':
-        return "Contraseña muy débil";
-      default:
-        return e.message ?? "Error de autenticación desconocido";
-    }
-  }
+  Future<void> logout() => _auth.signOut();
 }

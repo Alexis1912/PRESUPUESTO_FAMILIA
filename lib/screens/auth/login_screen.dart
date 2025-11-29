@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../home_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  LoginScreen({super.key}); // Quitamos const
-
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -14,83 +11,66 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final email = TextEditingController();
   final pass = TextEditingController();
-  bool loading = false;
-  String? errorMessage;
+
+  final auth = AuthService();
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthService>(context, listen: false);
-
     return Scaffold(
-      appBar: AppBar(title: const Text("Iniciar Sesión")),
       body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            TextField(
-              controller: email,
-              decoration: const InputDecoration(labelText: "Correo"),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            TextField(
-              controller: pass,
-              decoration: const InputDecoration(labelText: "Contraseña"),
-              obscureText: true,
-            ),
-            const SizedBox(height: 20),
-
-            if (errorMessage != null)
-              Text(
-                errorMessage!,
-                style: const TextStyle(color: Colors.red),
+        padding: const EdgeInsets.all(25),
+        child: Center(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              const Text(
+                "Iniciar Sesión",
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 40),
 
-            ElevatedButton(
-              onPressed: loading
-                  ? null
-                  : () async {
-                      setState(() {
-                        loading = true;
-                        errorMessage = null;
-                      });
+              TextField(
+                controller: email,
+                decoration: InputDecoration(labelText: "Correo"),
+              ),
+              const SizedBox(height: 20),
 
-                      final error =
-                          await auth.signIn(email.text.trim(), pass.text.trim());
+              TextField(
+                controller: pass,
+                obscureText: true,
+                decoration: InputDecoration(labelText: "Contraseña"),
+              ),
 
-                      if (error != null) {
-                        setState(() => errorMessage = error);
-                      } else {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => HomeScreen(), // Quitamos const
-                          ),
-                        );
-                      }
+              const SizedBox(height: 30),
 
-                      setState(() => loading = false);
-                    },
-              child: loading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("Ingresar"),
-            ),
+              ElevatedButton(
+                onPressed: () async {
+                  final user = await auth.login(email.text, pass.text);
+                  if (user != null) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => HomeScreen(user: user),
+                      ),
+                    );
+                  }
+                },
+                child: const Text("Ingresar"),
+              ),
 
-            const SizedBox(height: 10),
-
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => RegisterScreen(), // Quitamos const
-                  ),
-                );
-              },
-              child: const Text("Crear cuenta"),
-            ),
-          ],
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => RegisterScreen()),
+                  );
+                },
+                child: const Text("Crear cuenta"),
+              )
+            ],
+          ),
         ),
       ),
     );
