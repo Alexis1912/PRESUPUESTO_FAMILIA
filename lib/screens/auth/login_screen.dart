@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../../models/user_model.dart';
 import '../home_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({Key? key}) : super(key: key);
+  
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }

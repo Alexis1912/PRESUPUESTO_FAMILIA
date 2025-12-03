@@ -16,17 +16,54 @@ class Dashboard extends StatelessWidget {
           .orderBy("fecha", descending: true)
           .snapshots(),
       builder: (context, snapshot) {
-
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}"));
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                  const SizedBox(height: 20),
+                  Text(
+                    "Error al cargar datos",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    "${snapshot.error}",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+          );
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Text("Aún no hay movimientos registrados"));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.inbox, size: 80, color: Colors.grey[400]),
+                const SizedBox(height: 20),
+                const Text(
+                  "Aún no hay movimientos registrados",
+                  style: TextStyle(fontSize: 18),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  "Comienza agregando tu primer movimiento",
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          );
         }
 
         final docs = snapshot.data!.docs;
@@ -45,40 +82,38 @@ class Dashboard extends StatelessWidget {
 
         double balance = ingresos - egresos;
 
-        return ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const Text(
-              "Resumen General",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 20),
-
-            _infoCard("Total Ingresos", ingresos, Colors.green),
-            _infoCard("Total Egresos", egresos, Colors.red),
-            _infoCard(
-              "Balance Disponible",
-              balance,
-              balance >= 0 ? Colors.green : Colors.red,
-            ),
-
-            const SizedBox(height: 25),
-
-            _buildBarChart(ingresos, egresos),
-
-            const SizedBox(height: 30),
-            
-            const Text(
-              "Últimos movimientos",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 10),
-
-            for (int i = 0; i < docs.length && i < 5; i++)
-              _buildMovimientoItem(docs[i]),
-          ],
+        return RefreshIndicator(
+          onRefresh: () async {
+            // Forzar recarga
+            await Future.delayed(const Duration(milliseconds: 500));
+          },
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              const Text(
+                "Resumen General",
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              _infoCard("Total Ingresos", ingresos, Colors.green),
+              _infoCard("Total Egresos", egresos, Colors.red),
+              _infoCard(
+                "Balance Disponible",
+                balance,
+                balance >= 0 ? Colors.green : Colors.red,
+              ),
+              const SizedBox(height: 25),
+              _buildBarChart(ingresos, egresos),
+              const SizedBox(height: 30),
+              const Text(
+                "Últimos movimientos",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              for (int i = 0; i < docs.length && i < 5; i++)
+                _buildMovimientoItem(docs[i]),
+            ],
+          ),
         );
       },
     );
@@ -123,12 +158,13 @@ class Dashboard extends StatelessWidget {
             BarChartData(
               alignment: BarChartAlignment.spaceAround,
               borderData: FlBorderData(show: false),
+              gridData: FlGridData(show: false),
               barGroups: [
                 BarChartGroupData(
                   x: 0,
                   barRods: [
                     BarChartRodData(
-                      toY: ingresos,
+                      toY: ingresos > 0 ? ingresos : 1,
                       width: 30,
                       color: Colors.green,
                       borderRadius: BorderRadius.circular(6),
@@ -139,7 +175,7 @@ class Dashboard extends StatelessWidget {
                   x: 1,
                   barRods: [
                     BarChartRodData(
-                      toY: egresos,
+                      toY: egresos > 0 ? egresos : 1,
                       width: 30,
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(6),
@@ -148,15 +184,27 @@ class Dashboard extends StatelessWidget {
                 ),
               ],
               titlesData: FlTitlesData(
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                topTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
                     getTitlesWidget: (value, meta) {
                       switch (value.toInt()) {
                         case 0:
-                          return const Text("Ingresos");
+                          return const Padding(
+                            padding: EdgeInsets.only(top: 8.0),
+                            child: Text("Ingresos"),
+                          );
                         case 1:
-                          return const Text("Egresos");
+                          return const Padding(
+                            padding: EdgeInsets.only(top: 8.0),
+                            child: Text("Egresos"),
+                          );
                       }
                       return const SizedBox();
                     },
@@ -175,7 +223,7 @@ class Dashboard extends StatelessWidget {
 
   Widget _buildMovimientoItem(QueryDocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    final fecha = (data["fecha"] as Timestamp).toDate();
+    final fecha = (data["fecha"] as Timestamp?)?.toDate() ?? DateTime.now();
 
     return Card(
       elevation: 2,
@@ -193,27 +241,25 @@ class Dashboard extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-
         title: Text(
-          "${data['categoria']} - Bs. ${data['monto']}",
+          "${data['categoria'] ?? 'Sin categoría'} - Bs. ${(data['monto'] ?? 0).toStringAsFixed(2)}",
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(data["descripcion"]),
+            Text(data["descripcion"] ?? "Sin descripción"),
             const SizedBox(height: 3),
-
             Text(
-              "Agregado por: ${data["nombreUsuario"] ?? "Desconocido"}"
-              " (${data["rolUsuario"] ?? "rol"})",
+              "Agregado por: ${data["usuario"] ?? "Desconocido"}",
               style: TextStyle(color: Colors.grey[600], fontSize: 13),
             ),
           ],
         ),
-
-        trailing: Text("${fecha.day}/${fecha.month}/${fecha.year}"),
+        trailing: Text(
+          "${fecha.day}/${fecha.month}/${fecha.year}",
+          style: TextStyle(color: Colors.grey[700]),
+        ),
       ),
     );
   }
