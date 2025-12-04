@@ -17,7 +17,6 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (e) {
-    // Firebase ya está inicializado
     print('Firebase ya inicializado: $e');
   }
 
